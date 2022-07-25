@@ -8,14 +8,15 @@ import (
 )
 
 func init() {
-	// List all model versions currently stored in this cluster.
+	// List all ML models (N models can back 1 ML app) on this cluster.
 	Models.AddCommand(ListModels)
-	// Get more information about a particular model version in this cluster.
+	// Get more info about a particular ML model on this cluster.
 	Models.AddCommand(GetModel)
-	// Create a new model version in this cluster by uploading from local files.
+	// Update a particular model (to use a different model version).
 	Models.AddCommand(CreateModel)
 
-	CreateModel.Flags().String("local-model-path", "", "The local path of the model to upload to the cluster")
+	CreateModel.Flags().String("from-local", "",
+		"The local path of the variant to upload as the base variant for the model")
 }
 
 // Models is the parent of all model-related commands.
@@ -33,7 +34,7 @@ var ListModels = &cobra.Command{
 	},
 }
 
-// GetModel gets information about a particular ML deployment.
+// GetModel gets information about a particular ML model.
 var GetModel = &cobra.Command{
 	Use:   "get",
 	Short: "Get more info about a particular ML model in the current cluster",
@@ -46,20 +47,44 @@ var GetModel = &cobra.Command{
 	},
 }
 
-// CreateModel updates the given deployment to use a different model versino.
+// CreateModel creates a new model (with a base variant uploaded from local)
 var CreateModel = &cobra.Command{
 	Use:   "create",
-	Short: "Add a new model to the cluster",
+	Short: "Create a new model with a base variant",
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) != 1 {
-			fmt.Println("`mlm models create` requires 1 positional argument (model name)")
+			fmt.Println("`mlm models create` requires 1 argument (model name)")
 			os.Exit(1)
 		}
-		localModelPath, err := cmd.Flags().GetString("local-model-path")
-		if err != nil || localModelPath == "" {
-			fmt.Println("`mlm models create` requires flag --local-model-path")
+		localBaseVariantPath, err := cmd.Flags().GetString("from-local")
+		if err != nil || localBaseVariantPath == "" {
+			fmt.Println("`mlm models create` requires flag --from-local")
 			os.Exit(1)
 		}
-		fmt.Printf("PLACEHOLDER: Creating a new ML model %s which is loading from the directory %s\n", args[0], localModelPath)
+
+		modelVersionName := fmt.Sprintf("%s-base", args[0])
+
+		// Create the shared volume for the model
+		err = copyFromLocalToSharedVolume(localBaseVariantPath, modelVersionName)
+		if err != nil {
+			fmt.Println("Error copying from local to shared volume:" + err.Error())
+			os.Exit(1)
+		}
+
+		// Create the daemonset and service for the model
+		err = deployModelFromSharedVolume(args[0], "base", modelVersionName)
+		if err != nil {
+			fmt.Println("Error deploying model from shared volume:" + err.Error())
+			os.Exit(1)
+		}
+		fmt.Println("Successfully deployed model from shared volume")
+
+		// Add node labels for the base variant
+		err = addNodeLabels(args[0], "base", nil)
+		if err != nil {
+			fmt.Println("Error adding node labels for base variant:" + err.Error())
+			os.Exit(1)
+		}
+		fmt.Println("Successfully added node labels for base variant")
 	},
 }

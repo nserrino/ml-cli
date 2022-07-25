@@ -7,12 +7,10 @@ import (
 )
 
 func init() {
-	// Commands related to ML apps running on this cluster.
-	RootCmd.AddCommand(Apps)
-	// Commands related to ML deployments running on this cluster (N deployments can back 1 app).
-	RootCmd.AddCommand(Deployments)
-	// Commands related to ML model versions running on this cluster.
+	// Commands related to ML models running on this cluster.
 	RootCmd.AddCommand(Models)
+	// Commands related to ML model versions running on this cluster (N variants can back 1 model).
+	RootCmd.AddCommand(Variants)
 }
 
 // RootCmd is the base command for Cobra.

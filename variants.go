@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -23,9 +24,14 @@ func init() {
 	// Flags for create
 	CreateVariant.Flags().String("from-local", "", "The local path of the variant to upload")
 	CreateVariant.Flags().String("nodes", "", "A list of nodes to use this variant for")
+	CreateVariant.Flags().String("image-destination", "",
+		"The destination to push the container image for the model server")
 
 	// Flags for update
 	UpdateVariant.Flags().String("from-local", "", "The local path of the variant to upload")
+	UpdateVariant.Flags().String("nodes", "", "A list of nodes to use this variant for")
+	UpdateVariant.Flags().String("image-destination", "",
+		"The destination to push the container image for the model server")
 }
 
 // Variants is the parent of all variant-related commands.
@@ -67,16 +73,42 @@ var GetVariant = &cobra.Command{
 	},
 }
 
+func createVariant(modelName, variantName, localBaseVariantPath, imageDestination string, nodes []string) {
+	err := createAndPushModelServerImage(modelName, localBaseVariantPath, imageDestination)
+	if err != nil {
+		fmt.Println("Error creating and pushing model server:" + err.Error())
+		os.Exit(1)
+	}
+	fmt.Println("Successfully created and pushed model server image")
+
+	err = deployModelServer(modelName, variantName, imageDestination)
+	if err != nil {
+		fmt.Println("Error deploying model server:" + err.Error())
+		os.Exit(1)
+	}
+	fmt.Println("Successfully deployed model server")
+
+	// Add node labels for the base variant
+	err = addNodeLabels(modelName, variantName, nodes)
+	if err != nil {
+		fmt.Printf("Error adding node labels for variant %s: %s\n", variantName, err.Error())
+		os.Exit(1)
+	}
+	fmt.Printf("Successfully added node labels for variant %s", variantName)
+}
+
 // CreateVariant updates the given variant to use a different model version.
 var CreateVariant = &cobra.Command{
 	Use:   "create",
 	Short: "Add a new variant to the model",
 	Run: func(cmd *cobra.Command, args []string) {
-		modelName := getModelOrFail(cmd)
 		if len(args) != 1 {
 			fmt.Println("`mlm variants create` requires 1 positional argument (variant name)")
 			os.Exit(1)
 		}
+		variantName := args[0]
+		modelName := getModelOrFail(cmd)
+
 		localVariantPath, err := cmd.Flags().GetString("from-local")
 		if err != nil || localVariantPath == "" {
 			fmt.Println("`mlm variants create` requires flag --from-local")
@@ -87,8 +119,12 @@ var CreateVariant = &cobra.Command{
 			fmt.Println("`mlm variants create` requires flag --nodes")
 			os.Exit(1)
 		}
-		fmt.Printf("PLACEHOLDER: Creating a new ML variant %s for nodes %s on model %s from the directory %s\n",
-			args[0], nodeList, modelName, localVariantPath)
+		imageDestination, err := cmd.Flags().GetString("image-destination")
+		if err != nil || imageDestination == "" {
+			fmt.Println("`mlm models create` requires flag --image-destination")
+			os.Exit(1)
+		}
+		createVariant(modelName, variantName, localVariantPath, imageDestination, strings.Split(nodeList, ","))
 	},
 }
 

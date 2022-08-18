@@ -1,0 +1,350 @@
+{
+    "variables": [
+        {
+            "name": "start_time",
+            "type": "PX_STRING",
+            "description": "The relative start time of the window. Current time is assumed to be now",
+            "defaultValue": "-5m"
+        },
+        {
+            "name": "model",
+            "type": "PX_STRING",
+            "description": "The name of the model (optional)",
+            "defaultValue": ""
+        },
+        {
+            "name": "variant",
+            "type": "PX_STRING",
+            "description": "The name of the variant (optional)",
+            "defaultValue": ""
+        },
+        {
+            "name": "groupby",
+            "type": "PX_STRING",
+            "description": "The name of the series to group by",
+            "defaultValue": "model",
+            "validValues": [
+                "model",
+                "variant",
+                "pod"
+            ]
+        }
+    ],
+    "globalFuncs": [
+        {
+            "outputName": "pod_list",
+            "func": {
+                "name": "pod_list",
+                "args": [
+                    {
+                        "name": "start_time",
+                        "variable": "start_time"
+                    },
+                    {
+                        "name": "model",
+                        "variable": "model"
+                    },
+                    {
+                        "name": "variant",
+                        "variable": "variant"
+                    }
+                ]
+            }
+        },
+        {
+            "outputName": "resource_timeseries",
+            "func": {
+                "name": "resource_timeseries",
+                "args": [
+                    {
+                        "name": "start_time",
+                        "variable": "start_time"
+                    },
+                    {
+                        "name": "model",
+                        "variable": "model"
+                    },
+                    {
+                        "name": "variant",
+                        "variable": "variant"
+                    },
+                    {
+                        "name": "groupby",
+                        "variable": "groupby"
+                    }
+                ]
+            }
+        },
+        {
+            "outputName": "http_timeseries",
+            "func": {
+                "name": "http_timeseries",
+                "args": [
+                    {
+                        "name": "start_time",
+                        "variable": "start_time"
+                    },
+                    {
+                        "name": "model",
+                        "variable": "model"
+                    },
+                    {
+                        "name": "variant",
+                        "variable": "variant"
+                    },
+                    {
+                        "name": "groupby",
+                        "variable": "groupby"
+                    }
+                ]
+            }
+        },
+        {
+            "outputName": "label_timeseries",
+            "func": {
+                "name": "label_timeseries",
+                "args": [
+                    {
+                        "name": "start_time",
+                        "variable": "start_time"
+                    },
+                    {
+                        "name": "model",
+                        "variable": "model"
+                    },
+                    {
+                        "name": "variant",
+                        "variable": "variant"
+                    }
+                ]
+            }
+        },
+        {
+            "outputName": "confidence_timeseries",
+            "func": {
+                "name": "confidence_timeseries",
+                "args": [
+                    {
+                        "name": "start_time",
+                        "variable": "start_time"
+                    },
+                    {
+                        "name": "model",
+                        "variable": "model"
+                    },
+                    {
+                        "name": "variant",
+                        "variable": "variant"
+                    },
+                    {
+                        "name": "groupby",
+                        "variable": "groupby"
+                    }
+                ]
+            }
+        },
+        {
+            "outputName": "label_confidence_summary",
+            "func": {
+                "name": "label_confidence_summary",
+                "args": [
+                    {
+                        "name": "start_time",
+                        "variable": "start_time"
+                    },
+                    {
+                        "name": "model",
+                        "variable": "model"
+                    },
+                    {
+                        "name": "variant",
+                        "variable": "variant"
+                    },
+                    {
+                        "name": "groupby",
+                        "variable": "groupby"
+                    }
+                ]
+            }
+        }
+    ],
+    "widgets": [
+        {
+            "name": "Requests",
+            "position": {
+                "x": 0,
+                "y": 0,
+                "w": 4,
+                "h": 3
+            },
+            "globalFuncOutputName": "http_timeseries",
+            "displaySpec": {
+                "@type": "types.px.dev/px.vispb.TimeseriesChart",
+                "timeseries": [
+                    {
+                        "value": "requests_per_ns",
+                        "mode": "MODE_LINE",
+                        "series": "series"
+                    }
+                ],
+                "title": "",
+                "yAxis": {
+                    "label": "Requests per second"
+                },
+                "xAxis": null
+            }
+        },
+        {
+            "name": "P50 Confidence",
+            "position": {
+                "x": 4,
+                "y": 0,
+                "w": 4,
+                "h": 3
+            },
+            "globalFuncOutputName": "confidence_timeseries",
+            "displaySpec": {
+                "@type": "types.px.dev/px.vispb.TimeseriesChart",
+                "timeseries": [
+                    {
+                        "value": "confidence_p50",
+                        "mode": "MODE_LINE",
+                        "series": "series"
+                    }
+                ],
+                "title": "",
+                "yAxis": {
+                    "label": "confidence"
+                },
+                "xAxis": null
+            }
+        },
+        {
+            "name": "Labels",
+            "position": {
+                "x": 8,
+                "y": 0,
+                "w": 4,
+                "h": 3
+            },
+            "globalFuncOutputName": "label_timeseries",
+            "displaySpec": {
+                "@type": "types.px.dev/px.vispb.TimeseriesChart",
+                "timeseries": [
+                    {
+                        "value": "instances_per_ns",
+                        "mode": "MODE_AREA",
+                        "series": "label",
+                        "stackBySeries": true
+                    }
+                ],
+                "title": "",
+                "yAxis": {
+                    "label": "Instances per second"
+                },
+                "xAxis": null
+            }
+        },
+        {
+            "name": "Classifications",
+            "position": {
+                "x": 0,
+                "y": 3,
+                "w": 4,
+                "h": 3
+            },
+            "globalFuncOutputName": "label_confidence_summary",
+            "displaySpec": {
+                "@type": "types.px.dev/px.vispb.BarChart",
+                "bar": {
+                    "value": "instances",
+                    "label": "series",
+                    "stackBy": "label"
+                },
+                "xAxis": {
+                    "label": "# of requests"
+                },
+                "yAxis": {
+                    "label": ""
+                }
+            }
+        },
+        {
+            "name": "P50 Latency",
+            "position": {
+                "x": 4,
+                "y": 3,
+                "w": 4,
+                "h": 3
+            },
+            "globalFuncOutputName": "http_timeseries",
+            "displaySpec": {
+                "@type": "types.px.dev/px.vispb.TimeseriesChart",
+                "timeseries": [
+                    {
+                        "value": "latency_p50",
+                        "mode": "MODE_LINE",
+                        "series": "series"
+                    }
+                ],
+                "title": "",
+                "yAxis": {
+                    "label": "Latency"
+                },
+                "xAxis": null
+            }
+        },
+        {
+            "name": "P90 Latency",
+            "position": {
+                "x": 8,
+                "y": 3,
+                "w": 4,
+                "h": 3
+            },
+            "globalFuncOutputName": "http_timeseries",
+            "displaySpec": {
+                "@type": "types.px.dev/px.vispb.TimeseriesChart",
+                "timeseries": [
+                    {
+                        "value": "latency_p90",
+                        "mode": "MODE_LINE",
+                        "series": "series"
+                    }
+                ],
+                "title": "",
+                "yAxis": {
+                    "label": "Latency"
+                },
+                "xAxis": null
+            }
+        },                
+        {
+            "name": "Pods",
+            "position": {
+                "x": 0,
+                "y": 6,
+                "w": 12,
+                "h": 3
+            },
+            "globalFuncOutputName": "pod_list",
+            "displaySpec": {
+                "@type": "types.px.dev/px.vispb.Table",
+                "gutterColumn": "status"
+            }
+        },
+        {
+            "name": "Label Summary",
+            "position": {
+                "x": 0,
+                "y": 9,
+                "w": 12,
+                "h": 3
+            },
+            "globalFuncOutputName": "label_confidence_summary",
+            "displaySpec": {
+                "@type": "types.px.dev/px.vispb.Table"
+            }
+        }
+    ]
+}

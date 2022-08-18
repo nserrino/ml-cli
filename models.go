@@ -17,6 +17,8 @@ func init() {
 
 	CreateModel.Flags().String("from-local", "",
 		"The local path of the variant to upload as the base variant for the model")
+	CreateModel.Flags().String("image-destination", "",
+		"The destination to push the container image for the model server")
 }
 
 // Models is the parent of all model-related commands.
@@ -56,35 +58,21 @@ var CreateModel = &cobra.Command{
 			fmt.Println("`mlm models create` requires 1 argument (model name)")
 			os.Exit(1)
 		}
+		modelName := args[0]
+		variantName := "base"
+
 		localBaseVariantPath, err := cmd.Flags().GetString("from-local")
 		if err != nil || localBaseVariantPath == "" {
 			fmt.Println("`mlm models create` requires flag --from-local")
 			os.Exit(1)
 		}
 
-		modelVersionName := fmt.Sprintf("%s-base", args[0])
-
-		// Create the shared volume for the model
-		err = copyFromLocalToSharedVolume(localBaseVariantPath, modelVersionName)
-		if err != nil {
-			fmt.Println("Error copying from local to shared volume:" + err.Error())
+		imageDestination, err := cmd.Flags().GetString("image-destination")
+		if err != nil || imageDestination == "" {
+			fmt.Println("`mlm models create` requires flag --image-destination")
 			os.Exit(1)
 		}
 
-		// Create the daemonset and service for the model
-		err = deployModelFromSharedVolume(args[0], "base", modelVersionName)
-		if err != nil {
-			fmt.Println("Error deploying model from shared volume:" + err.Error())
-			os.Exit(1)
-		}
-		fmt.Println("Successfully deployed model from shared volume")
-
-		// Add node labels for the base variant
-		err = addNodeLabels(args[0], "base", nil)
-		if err != nil {
-			fmt.Println("Error adding node labels for base variant:" + err.Error())
-			os.Exit(1)
-		}
-		fmt.Println("Successfully added node labels for base variant")
+		createVariant(modelName, variantName, localBaseVariantPath, imageDestination, nil)
 	},
 }

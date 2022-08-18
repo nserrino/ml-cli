@@ -1,0 +1,143 @@
+import px
+import pxviews
+
+window_ns = px.DurationNanos(10*1000*1000*1000)
+
+def filter_pods(df: px.DataFrame, model: str, variant: str): 
+	df.labels = px.pod_id_to_pod_labels(df.pod_id)
+	df.model = px.pluck(df.labels, 'mlm.model.name')
+	df.variant = px.pluck(df.labels, 'mlm.model.variant')
+	filter_by_model = px.select(model != '', df.model == model, df.model != '')
+	filter_by_variant = px.select(variant != '', df.variant == variant, df.variant != '')
+	return df[filter_by_model and filter_by_variant]
+
+def resource_timeseries(start_time: str, model: str, variant: str, groupby: str):
+	df = pxviews.container_process_timeseries(start_time, px.now(), window_ns)
+	df = filter_pods(df, model, variant)
+	df.timestamp = df.time_
+	df = df.groupby(['pod', 'model', 'variant', 'timestamp']).agg(
+		cpu_usage=('cpu_usage', px.sum),
+		rss=('rss', px.sum),
+	)
+	df.time_ = df.timestamp
+	return df.drop('timestamp')
+
+def pod_list(start_time: str, model: str, variant: str):
+	# Pod stats
+	df = pxviews.pod_resource_stats(start_time, px.now())
+	df = filter_pods(df, model, variant)
+	df.node = px.pod_id_to_node_name(df.pod_id)
+	df.pod_start_time = px.pod_id_to_start_time(df.pod_id)
+	df.uptime = px.DurationNanos(px.now() - df.pod_start_time)
+	df.status = px.pod_name_to_status(df.pod)
+	df.cpu = df.cpu_usage
+	df.rss_bytes = df.rss
+
+	http_df = http_events_helper(start_time, model, variant)
+	http_df.pod_ = http_df.pod
+	http_df = http_df.drop('pod')
+	http_df = http_df.groupby('pod_').agg(
+		latency=('latency', px.quantiles),
+		num_requests=('time_', px.count)
+	)
+	df = df.merge(http_df, left_on='pod', right_on='pod_', how='left', suffixes=['', '_x'])
+	return df[['pod', 'model', 'variant', 'node', 'cpu', 'rss', 'latency', 'num_requests',
+		'uptime', 'status']]
+
+def http_events_helper(start_time: str, model: str, variant: str):
+	df = px.DataFrame(table='http_events', start_time=start_time)
+	df.pod_id = df.ctx['pod_id']
+	df = filter_pods(df, model, variant)
+	df.pod = df.ctx['pod']
+	return df
+
+def http_timeseries(start_time: str, model: str, variant: str, groupby: str):
+	df = http_events_helper(start_time, model, variant)
+	df.series = df[groupby]
+	df.timestamp = px.bin(df.time_, window_ns)
+	df = df.groupby(['series', 'timestamp']).agg(
+		latency=('latency', px.quantiles),
+		num_requests=('timestamp', px.count)	
+	)	
+	df.latency_p50 = px.DurationNanos(px.floor(px.pluck_float64(df.latency, 'p50')))
+	df.latency_p90 = px.DurationNanos(px.floor(px.pluck_float64(df.latency, 'p90')))
+	df.latency_p99 = px.DurationNanos(px.floor(px.pluck_float64(df.latency, 'p99')))
+	df.requests_per_ns = df.num_requests / window_ns
+	df.time_ = df.timestamp
+	return df[['time_', 'series', 'num_requests', 'requests_per_ns', 'latency_p50', 'latency_p90', 'latency_p99']]
+
+def http_summary(start_time: str, model: str, variant: str, groupby: str):
+	df = pxviews.inbound_http_latency_timeseries(start_time, px.now(), window_ns)
+	df = filter_pods(df, model, variant)
+	df.series = df[groupby]
+
+def parse_mobilenet_coco_responses(start_time: str, model: str, variant: str):
+	# Note: this only takes the top 5 results from each detection.
+	# It should be replaced by an unnest operator once Pixie has that functionality.
+	df = http_events_helper(start_time, model, variant)
+	df = df[['pod', 'model', 'variant', 'time_']]
+
+	df.predictions = px.pluck_array(px.pluck(df.resp_body, 'predictions'), 0)
+	df.detection_classes = px.pluck(df.predictions, 'detection_classes')
+	df.detection_scores = px.pluck(df.predictions, 'detection_scores')
+	
+	# 1st result
+	top1 = df
+	top1.label = px.pluck_array(top1.detection_classes, 0)
+	top1.confidence = px.pluck_array_float64(top1.detection_scores, 0)
+
+	# 2nd result
+	top2 = df
+	top2.label = px.pluck_array(top2.detection_classes, 1)
+	top2.confidence = px.pluck_array_float64(top2.detection_scores, 1)
+
+	# 3rd result
+	top3 = df
+	top3.label = px.pluck_array(top3.detection_classes, 2)
+	top3.confidence = px.pluck_array_float64(top3.detection_scores, 2)
+
+	# 4th result
+	top4 = df
+	top4.label = px.pluck_array(top4.detection_classes, 3)
+	top4.confidence = px.pluck_array_float64(top4.detection_scores, 3)
+
+	# 5th result
+	top5 = df
+	top5.label = px.pluck_array(top5.detection_classes, 4)
+	top5.confidence = px.pluck_array_float64(top5.detection_scores, 4)
+
+	df = top1.append([top2, top3, top4, top5])
+	return df[['pod', 'model', 'variant', 'label', 'confidence', 'time_']]
+
+def label_timeseries(start_time: str, model: str, variant: str):
+	df = parse_mobilenet_coco_responses(start_time, model, variant)
+	df.timestamp = px.bin(df.time_, window_ns)
+	df = df.groupby(['label', 'timestamp']).agg(
+		instances=('timestamp', px.count)
+	)
+	df.instances_per_ns = df.instances / window_ns
+	df.time_ = df.timestamp
+	return df.drop('timestamp')
+
+def label_confidence_summary(start_time: str, model: str, variant: str, groupby: str):
+	df = parse_mobilenet_coco_responses(start_time, model, variant)
+	df.series = df[groupby]
+	df = df.groupby(['series', 'label']).agg(
+		confidence=('confidence', px.quantiles),
+		instances=('time_', px.count)
+	)
+	return df[['series', 'label', 'confidence', 'instances']]
+
+def confidence_timeseries(start_time: str, model: str, variant: str, groupby: str):
+	df = parse_mobilenet_coco_responses(start_time, model, variant)
+	df.timestamp = px.bin(df.time_, window_ns)
+	df.series = df[groupby]
+	df = df.groupby(['series', 'timestamp']).agg(
+		confidence=('confidence', px.quantiles)
+	)
+	df.confidence_p50 = px.pluck_float64(df.confidence, 'p50')
+	df.confidence_p90 = px.pluck_float64(df.confidence, 'p90')
+	df.confidence_p99 = px.pluck_float64(df.confidence, 'p99')
+	df.time_ = df.timestamp	
+	return df.drop('timestamp')
+

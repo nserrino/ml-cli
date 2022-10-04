@@ -22,15 +22,12 @@ func init() {
 	Variants.PersistentFlags().String("model", "", "The name of the model")
 
 	// Flags for create
-	CreateVariant.Flags().String("from-local", "", "The local path of the variant to upload")
+	CreateVariant.Flags().String("from-local", "", "The local path of the variant to upload. "+
+		"Supports tensorflow serving and openvino format.")
 	CreateVariant.Flags().String("nodes", "", "A list of nodes to use this variant for")
+	CreateVariant.Flags().String("grpc-port", "31312", "The GRPC port for the client to access the model.")
+	CreateVariant.Flags().String("http-port", "31313", "The HTTP port for the client to access the model.")
 	CreateVariant.Flags().String("image-destination", "",
-		"The destination to push the container image for the model server")
-
-	// Flags for update
-	UpdateVariant.Flags().String("from-local", "", "The local path of the variant to upload")
-	UpdateVariant.Flags().String("nodes", "", "A list of nodes to use this variant for")
-	UpdateVariant.Flags().String("image-destination", "",
 		"The destination to push the container image for the model server")
 }
 
@@ -73,7 +70,8 @@ var GetVariant = &cobra.Command{
 	},
 }
 
-func createVariant(modelName, variantName, localBaseVariantPath, imageDestination string, nodes []string) {
+func createVariant(modelName, variantName, localBaseVariantPath, imageDestination string, nodes []string,
+	grpcPort, httpPort string) {
 	err := createAndPushModelServerImage(modelName, localBaseVariantPath, imageDestination)
 	if err != nil {
 		fmt.Println("Error creating and pushing model server:" + err.Error())
@@ -81,7 +79,7 @@ func createVariant(modelName, variantName, localBaseVariantPath, imageDestinatio
 	}
 	fmt.Println("Successfully created and pushed model server image")
 
-	err = deployModelServer(modelName, variantName, imageDestination)
+	err = deployModelServer(modelName, variantName, imageDestination, grpcPort, httpPort)
 	if err != nil {
 		fmt.Println("Error deploying model server:" + err.Error())
 		os.Exit(1)
@@ -94,7 +92,10 @@ func createVariant(modelName, variantName, localBaseVariantPath, imageDestinatio
 		fmt.Printf("Error adding node labels for variant %s: %s\n", variantName, err.Error())
 		os.Exit(1)
 	}
-	fmt.Printf("Successfully added node labels for variant %s", variantName)
+	fmt.Printf("Successfully added node labels for %s variant\n", variantName)
+	fmt.Printf("Deployed model to nodes on ports %s (gRPC), %s (HTTP)\n", grpcPort, httpPort)
+	fmt.Printf("Model can be accessed at HTTP endpoint `<HOST IP>:%s/v1/models/%s:predict`", httpPort, modelName)
+	fmt.Println("Run `kubectl -n mlm get daemonset` for more information")
 }
 
 // CreateVariant updates the given variant to use a different model version.
@@ -121,10 +122,21 @@ var CreateVariant = &cobra.Command{
 		}
 		imageDestination, err := cmd.Flags().GetString("image-destination")
 		if err != nil || imageDestination == "" {
-			fmt.Println("`mlm models create` requires flag --image-destination")
+			fmt.Println("`mlm variants create` requires flag --image-destination")
 			os.Exit(1)
 		}
-		createVariant(modelName, variantName, localVariantPath, imageDestination, strings.Split(nodeList, ","))
+		httpPort, err := cmd.Flags().GetString("http-port")
+		if err != nil || httpPort == "" {
+			fmt.Println("`mlm variants create` requires flag --http-port")
+			os.Exit(1)
+		}
+		grpcPort, err := cmd.Flags().GetString("grpc-port")
+		if err != nil || httpPort == "" {
+			fmt.Println("`mlm variants create` requires flag --grpc-port")
+			os.Exit(1)
+		}
+		createVariant(modelName, variantName, localVariantPath, imageDestination, strings.Split(nodeList, ","),
+			grpcPort, httpPort)
 	},
 }
 

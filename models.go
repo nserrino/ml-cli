@@ -16,7 +16,10 @@ func init() {
 	Models.AddCommand(CreateModel)
 
 	CreateModel.Flags().String("from-local", "",
-		"The local path of the variant to upload as the base variant for the model")
+		"The local path of the variant to upload as the base variant for the model. "+
+			"Supports tensorflow serving and openvino format.")
+	CreateModel.Flags().String("grpc-port", "31312", "The GRPC port for the client to access the model.")
+	CreateModel.Flags().String("http-port", "31313", "The HTTP port for the client to access the model.")
 	CreateModel.Flags().String("image-destination", "",
 		"The destination to push the container image for the model server")
 }
@@ -66,13 +69,23 @@ var CreateModel = &cobra.Command{
 			fmt.Println("`mlm models create` requires flag --from-local")
 			os.Exit(1)
 		}
-
+		httpPort, err := cmd.Flags().GetString("http-port")
+		if err != nil || httpPort == "" {
+			fmt.Println("`mlm models create` requires flag --http-port")
+			os.Exit(1)
+		}
+		grpcPort, err := cmd.Flags().GetString("grpc-port")
+		if err != nil || httpPort == "" {
+			fmt.Println("`mlm models create` requires flag --grpc-port")
+			os.Exit(1)
+		}
 		imageDestination, err := cmd.Flags().GetString("image-destination")
 		if err != nil || imageDestination == "" {
 			fmt.Println("`mlm models create` requires flag --image-destination")
 			os.Exit(1)
 		}
 
-		createVariant(modelName, variantName, localBaseVariantPath, imageDestination, nil)
+		createVariant(modelName, variantName, localBaseVariantPath, imageDestination, nil,
+			grpcPort, httpPort)
 	},
 }

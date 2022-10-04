@@ -10,7 +10,10 @@ import (
 	"strings"
 )
 
-const dockerfileTmpl = `# syntax=docker/dockerfile:1
+const tensorflowModelServerType = "tensorflow"
+const openvinoModelServerType = "openvino"
+
+const tensorflowDockerfileTmpl = `# syntax=docker/dockerfile:1
 FROM tensorflow/serving:2.8.0
 
 RUN  apt-get update \
@@ -23,8 +26,24 @@ ENV MODEL_NAME=$MODEL_NAME
 
 ENTRYPOINT ["/usr/bin/tf_serving_entrypoint.sh"]`
 
-func createDockerfile(modelName, filePath string) error {
-	fileContents := strings.Replace(dockerfileTmpl, "$MODEL_NAME", modelName, -1)
+const openvinoDockerfileTmpl = `# syntax=docker/dockerfile:1
+FROM openvino/model_server:2022.1
+
+ADD model /models/$MODEL_NAME/1
+
+CMD ["/ovms/bin/ovms", "--model_path", "/models/$MODEL_NAME", "--model_name", "$MODEL_NAME", "--port", "8500", "--rest_port", "8501", "--shape", "auto"]`
+
+func createDockerfile(modelServer, modelName, filePath string) error {
+	var fileContents string
+	if modelServer == openvinoModelServerType {
+		fileContents = strings.Replace(openvinoDockerfileTmpl, "$MODEL_NAME", modelName, -1)
+	} else if modelServer == tensorflowModelServerType {
+		fileContents = strings.Replace(tensorflowDockerfileTmpl, "$MODEL_NAME", modelName, -1)
+	} else {
+		return fmt.Errorf("Unsupported model server type %s", modelServer)
+	}
+
+	fmt.Printf("Building %s type model server\n", modelServer)
 
 	tmpFile, err := os.Create(filePath)
 	if err != nil {
@@ -38,6 +57,48 @@ func createDockerfile(modelName, filePath string) error {
 	}
 
 	return nil
+}
+
+func getModelServerTypeFromModelFormat(absModelPath string) (string, error) {
+	// Determine whether to use tensorflow serving or openvino model server based on input
+	modelDirStat, _ := os.Lstat(absModelPath)
+
+	// Validate that the path is a directory
+	if isDir := modelDirStat.IsDir(); !isDir {
+		return "", fmt.Errorf("Expected model path to point to directory, received file: %s", absModelPath)
+	}
+
+	srcDirContent, _ := os.ReadDir(absModelPath)
+
+	// ovms
+	hasXml := false
+	hasBin := false
+	// tensorflow
+	hasSavedModel := false
+
+	for _, contentFile := range srcDirContent {
+		if contentFile.IsDir() {
+			continue
+		}
+		if contentFile.Name() == "saved_model.pb" {
+			hasSavedModel = true
+		}
+		ext := filepath.Ext(contentFile.Name())
+		if ext == ".bin" {
+			hasBin = true
+		} else if ext == ".xml" {
+			hasXml = true
+		}
+	}
+
+	if hasSavedModel {
+		return tensorflowModelServerType, nil
+	}
+	if hasXml && hasBin {
+		return openvinoModelServerType, nil
+	}
+	return "", fmt.Errorf("Model directory did not contain expected format. " +
+		"(Tensorflow format: requires saved_model.pb. OpenVino format: requires xml and bin files.)")
 }
 
 func createAndPushModelServerImage(modelName, modelPath, imageDestination string) error {
@@ -63,7 +124,12 @@ func createAndPushModelServerImage(modelName, modelPath, imageDestination string
 		return err
 	}
 
-	err = createDockerfile(modelName, "Dockerfile")
+	modelServer, err := getModelServerTypeFromModelFormat(absModelPath)
+	if err != nil {
+		return err
+	}
+
+	err = createDockerfile(modelServer, modelName, "Dockerfile")
 	if err != nil {
 		return err
 	}
@@ -132,10 +198,10 @@ spec:
         image: $MODEL_SERVER_VARIANT_IMAGE
         ports:
         - containerPort: 8501
-          hostPort: 50311
+          hostPort: $HOST_HTTP_PORT
           name: http
         - containerPort: 8500
-          hostPort: 50310
+          hostPort: $HOST_GRPC_PORT
           name: grpc
 `
 
@@ -153,7 +219,7 @@ func createTempFile(fileContents string) (string, error) {
 	return tmpFile.Name(), nil
 }
 
-func deployModelServer(modelName, variantName, imageLocation string) error {
+func deployModelServer(modelName, variantName, imageLocation, grpcPort, httpPort string) error {
 	modelDaemonSetName := fmt.Sprintf("%s-%s", modelName, variantName)
 	nodeLabelKey := labelName(modelName)
 	modelServerVariantImage := imageLocation
@@ -164,6 +230,8 @@ func deployModelServer(modelName, variantName, imageLocation string) error {
 	kubernetesResources = strings.Replace(kubernetesResources, "$MODEL_DAEMONSET_NAME", modelDaemonSetName, -1)
 	kubernetesResources = strings.Replace(kubernetesResources, "$NODE_LABEL_KEY", nodeLabelKey, -1)
 	kubernetesResources = strings.Replace(kubernetesResources, "$MODEL_SERVER_VARIANT_IMAGE", modelServerVariantImage, -1)
+	kubernetesResources = strings.Replace(kubernetesResources, "$HOST_GRPC_PORT", grpcPort, -1)
+	kubernetesResources = strings.Replace(kubernetesResources, "$HOST_HTTP_PORT", httpPort, -1)
 
 	fileName, err := createTempFile(kubernetesResources)
 	if fileName == "" || err != nil {

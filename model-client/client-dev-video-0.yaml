@@ -4,7 +4,6 @@ metadata:
   annotations:
   name: demo-client
 spec:
-  replicas: 4
   selector:
     matchLabels:
       name: demo-client
@@ -33,11 +32,13 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: metadata.name
+        - name: IMAGE_PATHS
+          value: "[]"
         - name: MODEL_IMAGE
           value: "mobilenet"
         - name: VIDEO
           value: "true"
-        image: us-west1-docker.pkg.dev/soe-mlexray/pixie-development/koo-client:0.0.13
+        image: us-west1-docker.pkg.dev/soe-mlexray/pixie-development/koo-client:0.0.16
         imagePullPolicy: IfNotPresent
         name: app
         volumeMounts:

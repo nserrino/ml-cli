@@ -1,0 +1,41 @@
+kind: DaemonSet
+apiVersion: apps/v1
+metadata:
+  name: fakevideo-server
+  labels:
+    name: fakevideo-server
+spec:
+  selector:
+    matchLabels:
+      name: fakevideo-server
+  template:
+    metadata:
+      labels:
+        name: fakevideo-server
+    spec:
+      containers:
+        - name: fakevideo-server
+          image: us-west1-docker.pkg.dev/soe-mlexray/ee292d/ee292d-vid:0.2
+          command: ["/bin/sh", "-c"]
+          args:
+            - gcsfuse ee292d-sample-videos /videos;
+              ffmpeg -re -i /videos/video0.mp4 -f v4l2 /host/dev/video0;
+          securityContext:
+            privileged: true
+            capabilities:
+              add:
+                - SYS_ADMIN
+          lifecycle:
+#            postStart:
+#              exec:
+#                command: ["gcsfuse", "ee292d-sample-videos", "/videos"]
+            preStop:
+              exec:
+                command: ["fusermount", "-u", "/videos"]
+          volumeMounts:
+          - name: host-mount
+            mountPath: /host/dev
+      volumes:
+        - name: host-mount
+          hostPath:
+            path: /dev

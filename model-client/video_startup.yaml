@@ -1,0 +1,40 @@
+kind: DaemonSet
+apiVersion: apps/v1
+metadata:
+  name: startup-script
+  labels:
+    name: startup-script
+spec:
+  selector:
+    matchLabels:
+      name: startup-script
+  template:
+    metadata:
+      labels:
+        name: startup-script
+    spec:  
+      hostPID: true
+      containers:
+        - name: startup-script
+          image: gcr.io/google-containers/startup-script:v1
+          imagePullPolicy: Always
+          securityContext:
+            privileged: true
+          env:
+          - name: STARTUP_SCRIPT
+            value: |
+              #! /bin/bash
+
+              set -x 
+
+              set -o errexit
+              set -o pipefail
+              set -o nounset
+
+              apt update 
+              apt install -y linux-modules-extra-$(uname -r) v4l2loopback-dkms ffmpeg v4l-utils
+              depmod -a
+              modprobe v4l2loopback
+
+              touch /tmp/foo6
+              echo done

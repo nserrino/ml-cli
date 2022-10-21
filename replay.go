@@ -1,79 +1,83 @@
 package main
 
 import (
+	"bufio"
+	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
 
 func init() {
-	CreateModel.Flags().String("http-port", "31312", "The HTTP port(s) for the client to access the model(s).")
-	CreateModel.Flags().String("from-file", "", "A path to the captured JSON requests to replay.")
+	Replay.Flags().String("addrs", "", "The addresses to hit (with path), comma separated")
+	Replay.Flags().String("input", "", "A path to the captured JSON requests to replay.")
+	Replay.Flags().String("output", "", "The path to the output results file")
+}
+
+type replayRequest struct {
+    ReqBody string `json:"req_body"`
 }
 
 // Replay replays requests from a given model to another model.
 var Replay = &cobra.Command{
 	Use:   "replay",
 	Short: "Replay a request to another instance of a model (local or remote)",
-}
-
-// ListModels lists all of the ML models in the current cluster.
-var ListModels = &cobra.Command{
-	Use:   "list",
-	Short: "List ML models in the current cluster",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("PLACEHOLDER: Listing ML models")
-	},
-}
+		inputFile, err := cmd.Flags().GetString("input")
+		if err != nil || inputFile == "" {
+			fmt.Println("`mlm replay` requires flag --input")
+			os.Exit(1)
+		}
+		outputFile, err := cmd.Flags().GetString("output")
+		if err != nil || outputFile == "" {
+			fmt.Println("`mlm replay` requires flag --output")
+			os.Exit(1)
+		}
+		addrsStr, err := cmd.Flags().GetString("addrs")
+		if err != nil || addrsStr == "" {
+			fmt.Println("`mlm replay` requires flag --addrs")
+			os.Exit(1)
+		}
+		addrs := strings.Split(addrsStr, ",")
+		fmt.Println(addrs)
 
-// GetModel gets information about a particular ML model.
-var GetModel = &cobra.Command{
-	Use:   "get",
-	Short: "Get more info about a particular ML model in the current cluster",
-	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) != 1 {
-			fmt.Println("`mlm models get` requires 1 argument (model name)")
+		in, err := os.Open(inputFile)
+		if err != nil {
+			fmt.Printf("Could not open input file %s: %v\n", inputFile, err)
 			os.Exit(1)
 		}
-		fmt.Printf("PLACEHOLDER: Getting the ML model %s\n", args[0])
-	},
-}
+		outFile, err := os.Create(outputFile)
+		if err != nil {
+			fmt.Printf("Could not open output file %s: %v\n", outputFile, err)
+			os.Exit(1)
+		}
+		defer outFile.Close()
 
-// CreateModel creates a new model (with a base variant uploaded from local)
-var CreateModel = &cobra.Command{
-	Use:   "create",
-	Short: "Create a new model with a base variant",
-	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) != 1 {
-			fmt.Println("`mlm models create` requires 1 argument (model name)")
-			os.Exit(1)
-		}
-		modelName := args[0]
-		variantName := "base"
 
-		localBaseVariantPath, err := cmd.Flags().GetString("from-local")
-		if err != nil || localBaseVariantPath == "" {
-			fmt.Println("`mlm models create` requires flag --from-local")
-			os.Exit(1)
-		}
-		httpPort, err := cmd.Flags().GetString("http-port")
-		if err != nil || httpPort == "" {
-			fmt.Println("`mlm models create` requires flag --http-port")
-			os.Exit(1)
-		}
-		grpcPort, err := cmd.Flags().GetString("grpc-port")
-		if err != nil || httpPort == "" {
-			fmt.Println("`mlm models create` requires flag --grpc-port")
-			os.Exit(1)
-		}
-		imageDestination, err := cmd.Flags().GetString("image-destination")
-		if err != nil || imageDestination == "" {
-			fmt.Println("`mlm models create` requires flag --image-destination")
-			os.Exit(1)
+		inputReader := bufio.NewReader(in)
+		decoder := json.NewDecoder(inputReader)
+
+		reqIdx := 0
+		for decoder.More() {
+		    var request replayRequest
+		    if err := decoder.Decode(&request); err != nil {
+		        fmt.Printf("Error parsing replay request: %v\n", err)
+		        os.Exit(1)
+		    }
+
+		    resStr, err := performReplays(request, addrs, reqIdx)
+		    if err != nil {
+		    	fmt.Printf("Error performing replays: %v\n", err)
+		    	os.Exit(1)
+		    }
+
+		    outFile.WriteString(resStr)
+		    outFile.WriteString("\n")
+		    reqIdx++
 		}
 
-		createVariant(modelName, variantName, localBaseVariantPath, imageDestination, nil,
-			grpcPort, httpPort)
-	},
+		fmt.Printf("Wrote %d replays to %s", reqIdx, outputFile)
+	},	
 }

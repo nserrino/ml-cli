@@ -4,23 +4,26 @@ import requests
 import json
 from PIL import Image
 import cv2
-import tensorflow as tf
 import os
 import time
 import random
+import io
+import base64
 
 requests.packages.urllib3.disable_warnings()
 import ssl
 import urllib.request
 
-model_server_ip = os.environ['HOST_IP']
-model_server_port = os.environ['SERVER_PORT']
-model_image = os.environ['MODEL_IMAGE']
+host_ip = os.environ.get('HOST_IP')
+model_server_port = os.environ.get('SERVER_PORT')
+model_image = os.environ.get('MODEL_IMAGE')
+video_stream = os.environ.get('VIDEO_STREAM') == 'true'
 image_urls = json.loads(os.environ.get('IMAGE_PATHS'))
-video_stream = os.environ.get('VIDEO') == 'true'
-seed = os.environ['RANDOM_SEED']
+seed = os.environ.get('RANDOM_SEED')
+image_height = os.environ.get('IMAGE_HEIGHT') or 300
+image_width = os.environ.get('IMAGE_WIDTH') or 400
+converter_port = os.environ.get('CONVERTER_PORT')
 
-random.seed(seed)
 cap = None
 
 if video_stream:
@@ -29,8 +32,8 @@ if video_stream:
     if not (cap.isOpened()):
         print("Could not open video device")
         exit()
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 400)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 300)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, image_width)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, image_height)
     print("Taking data from /dev/video0")
 else:
     # Fetch images.
@@ -43,7 +46,6 @@ else:
         image_paths.append(test_image_path)    
     print("Taking data from env=IMAGE_PATHS")
 
-print("Hitting model server at %s" % (model_server_ip), flush=True)
 try:
     _create_unverified_https_context = ssl._create_unverified_context
 except AttributeError:
@@ -67,19 +69,28 @@ def get_next_image():
 
 
 while True:
-    images = []
     image_np = get_next_image()
     if image_np is None:
         continue
 
-    images.append(image_np.tolist())
+    im = Image.fromarray(image_np)
+    im = im.resize((image_width, image_height))
 
-    data = json.dumps({"instances": images})
+    with io.BytesIO() as output:
+        im.save(output, format='JPEG')
+        encoded = base64.b64encode(output.getvalue())
+        headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+        model_server = 'http://%s:%s/v1/models/%s:predict' % (host_ip, model_server_port, model_image)
+        payload = json.dumps({"image": encoded.decode('utf-8'), "model_server": model_server})
+        converter_server = 'http://%s:%s/convert' % (host_ip, converter_port)
+        response = requests.post(converter_server, data=payload, headers=headers)        
 
-    headers = {"content-type": "application/json"}
-    json_response = requests.post('http://%s:%s/v1/models/%s:predict' % (model_server_ip, model_server_port, model_image), data=data, headers=headers)
-    resp = json_response.json()
-    resp['timestamp'] = time.time()
-    print(json.dumps(resp), flush=True)
+        try:
+            data = response.json()     
+            data['timestamp'] = time.time()
+            print(json.dumps(data), flush=True)         
+        except requests.exceptions.RequestException:
+            print(response.text)
+
     time.sleep(3)
                      

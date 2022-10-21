@@ -1,13 +1,12 @@
 import px
 
 df = px.DataFrame(table='http_events', start_time='-5m')
-df = df[df.ctx['pod'] == 'ssd300']
+df = df[px.contains(df.ctx['pod'], 'image-converter')]
 
 # Restrict number of results.
 df = df.head(10)
 
 # Order columns.
-df = df[['time_', 'latency', 'req_path', 'req_method', 'req_headers', 'req_body',
-        'resp_status', 'resp_message', 'resp_headers', 'resp_body']]
+df = df[['req_body']]
 
 px.display(df)

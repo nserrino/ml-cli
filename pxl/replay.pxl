@@ -1,0 +1,13 @@
+import px
+
+df = px.DataFrame(table='http_events', start_time='-5m')
+df = df[df.ctx['pod'] == 'ssd300']
+
+# Restrict number of results.
+df = df.head(10)
+
+# Order columns.
+df = df[['time_', 'latency', 'req_path', 'req_method', 'req_headers', 'req_body',
+        'resp_status', 'resp_message', 'resp_headers', 'resp_body']]
+
+px.display(df)

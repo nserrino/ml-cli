@@ -11,6 +11,8 @@ func init() {
 	RootCmd.AddCommand(Models)
 	// Commands related to ML model versions running on this cluster (N variants can back 1 model).
 	RootCmd.AddCommand(Variants)
+	// Commands related to replaying requests from one instance of a model to another.
+	RootCmd.AddCommand(Replay)
 }
 
 // RootCmd is the base command for Cobra.

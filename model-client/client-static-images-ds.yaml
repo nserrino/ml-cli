@@ -20,8 +20,6 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        - name: SERVER_PORT
-          value: "31313"
         - name: CONVERTER_PORT
           value: "13131"    
         - name: RANDOM_SEED
@@ -30,13 +28,13 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: metadata.name
-        - name: MODEL_IMAGE
+        - name: MODEL
           value: "mobilenet3"
         - name: IMAGE_PATHS
           value: '["https://upload.wikimedia.org/wikipedia/commons/b/b4/Samoyede_Nauka_2003-07_asb_PICT1895_small.JPG",
             "https://upload.wikimedia.org/wikipedia/commons/4/45/A_small_cup_of_coffee.JPG",
             "https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/Sunflower_from_Silesia2.jpg/1600px-Sunflower_from_Silesia2.jpg"]'
-        image: us-west1-docker.pkg.dev/soe-mlexray/pixie-development/koo-client:0.0.17
+        image: us-west1-docker.pkg.dev/soe-mlexray/pixie-development/koo-client:0.0.19
         imagePullPolicy: Always
         name: app
 ---
@@ -55,7 +53,15 @@ spec:
         name: image-converter
     spec:
       containers:
-      - image: us-west1-docker.pkg.dev/soe-mlexray/pixie-development/image-converter:0.0.1
+      - env:
+        - name: HOST_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.hostIP
+        - name: SERVER_PORT
+          value: "31313"   
+        image: us-west1-docker.pkg.dev/soe-mlexray/pixie-development/image-converter:0.0.2
         imagePullPolicy: Always
         name: app
         ports:

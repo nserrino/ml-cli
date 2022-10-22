@@ -1,4 +1,5 @@
 import io
+import os
 import json                    
 import base64                  
 import logging             
@@ -10,12 +11,16 @@ from flask import Flask, request, jsonify, abort
 
 app = Flask(__name__)          
 app.logger.setLevel(logging.DEBUG)
-  
+
+host_ip = os.environ.get('HOST_IP')
+model_server_port = os.environ.get('SERVER_PORT')
+image_height = os.environ.get('IMAGE_HEIGHT') or 300
+image_width = os.environ.get('IMAGE_WIDTH') or 400
   
 @app.route('/', defaults={'u_path': ''}, methods=['POST'])
 @app.route('/<path:u_path>', methods=['POST'])
 def catch_all(u_path):
-    if not request.json or 'image' not in request.json or 'model_server' not in request.json:
+    if not request.json or 'image' not in request.json or 'model' not in request.json:
         abort(400)
              
     print(len(request.json['image']))
@@ -30,8 +35,8 @@ def catch_all(u_path):
     data = json.dumps({"instances": images})
 
     headers = {"content-type": "application/json"}
-    json_response = requests.post(request.json['model_server'], data=data, headers=headers)
-    resp = json_response.json()
+    model_server = 'http://%s:%s/v1/models/%s:predict' % (host_ip, model_server_port, request.json['model'])
+    json_response = requests.post(model_server, data=data, headers=headers)
     return json_response.json()
   
   

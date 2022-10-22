@@ -15,14 +15,13 @@ import ssl
 import urllib.request
 
 host_ip = os.environ.get('HOST_IP')
-model_server_port = os.environ.get('SERVER_PORT')
-model_image = os.environ.get('MODEL_IMAGE')
+converter_port = os.environ.get('CONVERTER_PORT')
+model_image = os.environ.get('MODEL')
 video_stream = os.environ.get('VIDEO_STREAM') == 'true'
 image_urls = json.loads(os.environ.get('IMAGE_PATHS'))
 seed = os.environ.get('RANDOM_SEED')
 image_height = os.environ.get('IMAGE_HEIGHT') or 300
 image_width = os.environ.get('IMAGE_WIDTH') or 400
-converter_port = os.environ.get('CONVERTER_PORT')
 
 cap = None
 
@@ -80,8 +79,7 @@ while True:
         im.save(output, format='JPEG')
         encoded = base64.b64encode(output.getvalue())
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
-        model_server = 'http://%s:%s/v1/models/%s:predict' % (host_ip, model_server_port, model_image)
-        payload = json.dumps({"image": encoded.decode('utf-8'), "model_server": model_server})
+        payload = json.dumps({"image": encoded.decode('utf-8'), "model": model_image})
         converter_server = 'http://%s:%s/convert' % (host_ip, converter_port)
         response = requests.post(converter_server, data=payload, headers=headers)        
 

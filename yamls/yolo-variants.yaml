@@ -1,0 +1,29 @@
+model: yolo
+namespace: mlm
+httpPort: 31313
+grpcPort: 31312
+variants:
+  - name: yolo-v2
+    imageDestination: us-west1-docker.pkg.dev/soe-mlexray/mlexray-demo/yolo-v2-tfs:0.0.1
+    sourceModelPath: coco_80/public/yolo-v2-tf/saved_model
+    nodeSelector: variant=1
+  - name: yolo-v2-tiny
+    imageDestination: us-west1-docker.pkg.dev/soe-mlexray/mlexray-demo/yolo-v2-tiny-tfs:0.0.1
+    sourceModelPath: coco_80/public/yolo-v2-tiny-tf/saved_model
+    nodeSelector: variant=2
+  - name: yolo-v3
+    imageDestination: us-west1-docker.pkg.dev/soe-mlexray/mlexray-demo/yolo-v3-tfs:0.0.1
+    sourceModelPath: coco_80/public/yolo-v3-tf/saved_model
+    nodeSelector: variant=3
+  - name: yolo-v3-tiny
+    imageDestination: us-west1-docker.pkg.dev/soe-mlexray/mlexray-demo/yolo-v3-tiny-tfs:0.0.1
+    sourceModelPath: coco_80/public/yolo-v3-tiny-tf/saved_model
+    nodeSelector: variant=4
+  - name: yolo-v4
+    imageDestination: us-west1-docker.pkg.dev/soe-mlexray/mlexray-demo/yolo-v4-tfs:0.0.1
+    sourceModelPath: coco_80/public/yolo-v4-tf/saved_model
+    nodeSelector: variant=5
+  - name: yolo-v4-tiny
+    imageDestination: us-west1-docker.pkg.dev/soe-mlexray/mlexray-demo/yolo-v4-tiny-tfs:0.0.1
+    sourceModelPath: coco_80/public/yolo-v4-tiny-tf/saved_model
+    nodeSelector: variant=6

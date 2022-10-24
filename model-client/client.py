@@ -18,10 +18,10 @@ host_ip = os.environ.get('HOST_IP')
 converter_port = os.environ.get('CONVERTER_PORT')
 model_image = os.environ.get('MODEL')
 video_stream = os.environ.get('VIDEO_STREAM') == 'true'
-image_urls = json.loads(os.environ.get('IMAGE_PATHS'))
+image_urls = json.loads(os.environ.get('IMAGE_PATHS') or '[]')
 seed = os.environ.get('RANDOM_SEED')
-image_height = os.environ.get('IMAGE_HEIGHT') or 300
-image_width = os.environ.get('IMAGE_WIDTH') or 400
+image_height = int(os.environ.get('IMAGE_HEIGHT') or '300')
+image_width = int(os.environ.get('IMAGE_WIDTH') or '400')
 
 cap = None
 

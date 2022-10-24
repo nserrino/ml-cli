@@ -18,8 +18,9 @@ spec:
           image: us-west1-docker.pkg.dev/soe-mlexray/ee292d/ee292d-vid:0.2
           command: ["/bin/sh", "-c"]
           args:
-            - gcsfuse ee292d-sample-videos /videos;
-              ffmpeg -re -i /videos/video0.mp4 -f v4l2 /host/dev/video0;
+            - gcsfuse  --implicit-dirs mlexray-ds-virat /videos;
+              ls  /videos;
+              ffmpeg -re -i /videos/original_scaled/VIRAT_S_000001_800.mp4 -f v4l2 /host/dev/video0;
           securityContext:
             privileged: true
             capabilities:

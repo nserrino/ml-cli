@@ -1,0 +1,21 @@
+model: coco80
+namespace: mlm
+httpPort: 31313
+grpcPort: 31312
+variants:
+  - name: centernet-resnet50-v2-512x512-coco17-tpu-8
+    imageDestination: us-west1-docker.pkg.dev/soe-mlexray/mlexray-demo/centernet-resnet50-v2-512x512-coco17-tpu-8:0.0.1
+    sourceModelPath: /home/nserrino/zoo/centernet_resnet50_v2_512x512_coco17_tpu-8/saved_model
+    nodeSelector: variant=1
+  - name: centernet-resnet50-v1-fpn-512x512-coco17-tpu-8
+    imageDestination: us-west1-docker.pkg.dev/soe-mlexray/mlexray-demo/centernet-resnet50-v1-fpn-512x512-coco17-tpu-8:0.0.1
+    sourceModelPath: /home/nserrino/zoo/centernet_resnet50_v1_fpn_512x512_coco17_tpu-8/saved_model
+    nodeSelector: variant=2
+  - name: centernet-resnet101-v1-fpn-512x512-coco17-tpu-8
+    imageDestination: us-west1-docker.pkg.dev/soe-mlexray/mlexray-demo/centernet-resnet101-v1-fpn-512x512-coco17-tpu-8:0.0.1
+    sourceModelPath: /home/nserrino/zoo/centernet_resnet101_v1_fpn_512x512_coco17_tpu-8/saved_model
+    nodeSelector: variant=3
+  - name: centernet-hg104-512x512-coco17-tpu-8
+    imageDestination: us-west1-docker.pkg.dev/soe-mlexray/mlexray-demo/centernet-hg104-512x512-coco17-tpu-8:0.0.1
+    sourceModelPath: /home/nserrino/zoo/centernet_hg104_512x512_coco17_tpu-8/saved_model
+    nodeSelector: variant=4

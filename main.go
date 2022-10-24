@@ -13,6 +13,9 @@ func init() {
 	RootCmd.AddCommand(Variants)
 	// Commands related to replaying requests from one instance of a model to another.
 	RootCmd.AddCommand(Replay)
+	// Commands related to applying a model configuration. 
+	// An alterative to using `mlm models create` and `mlm variants create`.
+	RootCmd.AddCommand(Apply)
 }
 
 // RootCmd is the base command for Cobra.

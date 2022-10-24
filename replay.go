@@ -16,6 +16,7 @@ import (
 
 func init() {
 	Replay.Flags().String("addrs", "", "The addresses to hit (with path), comma separated")
+	Replay.Flags().String("names", "", "The names of the models at addrs, comma separated")
 	Replay.Flags().String("input", "", "A path to the captured JSON requests to replay.")
 	Replay.Flags().String("output", "", "The path to the output results file")
 }
@@ -59,14 +60,14 @@ func performReplay(r replayRequest, addr string) (replayResultInstance, error) {
 	}, nil
 }
 
-func performReplays(r replayRequest, addrs []string, reqIdx int) (string, error) {
+func performReplays(r replayRequest, addrs []string, names []string, reqIdx int) (string, error) {
 	resMap := make(map[string]replayResultInstance, len(addrs))
-	for _, addr := range addrs {
+	for i, addr := range addrs {
 		res, err := performReplay(r, addr)
 		if err != nil {
 			return "", fmt.Errorf("Error for addr %s: %v", addr, err)
 		}
-		resMap[addr] = res
+		resMap[names[i]] = res
 	}
 	out := replayResult{
 		Request: reqIdx,
@@ -99,8 +100,13 @@ var Replay = &cobra.Command{
 			fmt.Println("`mlm replay` requires flag --addrs")
 			os.Exit(1)
 		}
+		namesStr, err := cmd.Flags().GetString("names")
+		if err != nil || addrsStr == "" {
+			namesStr = addrsStr
+		}
+
 		addrs := strings.Split(addrsStr, ",")
-		fmt.Println(addrs)
+		names := strings.Split(namesStr, ",")
 
 		in, err := os.Open(inputFile)
 		if err != nil {
@@ -125,7 +131,7 @@ var Replay = &cobra.Command{
 				os.Exit(1)
 			}
 
-			resStr, err := performReplays(request, addrs, reqIdx)
+			resStr, err := performReplays(request, addrs, names, reqIdx)
 			if err != nil {
 				fmt.Printf("Error performing replays: %v\n", err)
 				os.Exit(1)
@@ -136,6 +142,6 @@ var Replay = &cobra.Command{
 			reqIdx++
 		}
 
-		fmt.Printf("Wrote %d replays to %s", reqIdx, outputFile)
+		fmt.Printf("Wrote %d replays to %s\n", reqIdx, outputFile)
 	},
 }

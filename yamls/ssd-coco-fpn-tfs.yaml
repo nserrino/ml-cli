@@ -1,0 +1,7 @@
+model: mobilenet3
+namespace: mlm
+httpPort: 31313
+grpcPort: 31312
+baseVariant:
+  imageDestination: us-west1-docker.pkg.dev/soe-mlexray/mlexray-demo/mobilenet3-ssd-mobilenet-v1-coco-fpn-tfs:0.0.1
+  sourceModelPath: coco_91/public/ssd_mobilenet_v1_fpn_coco/ssd_mobilenet_v1_fpn_shared_box_predictor_640x640_coco14_sync_2018_07_03/saved_model

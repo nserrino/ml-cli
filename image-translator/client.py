@@ -14,8 +14,8 @@ app.logger.setLevel(logging.DEBUG)
 
 host_ip = os.environ.get('HOST_IP')
 model_server_port = os.environ.get('SERVER_PORT')
-image_height = os.environ.get('IMAGE_HEIGHT') or 300
-image_width = os.environ.get('IMAGE_WIDTH') or 400
+image_height = int(os.environ.get('IMAGE_HEIGHT') or '300')
+image_width = int(os.environ.get('IMAGE_WIDTH') or '400')
   
 @app.route('/', defaults={'u_path': ''}, methods=['POST'])
 @app.route('/<path:u_path>', methods=['POST'])

@@ -15,6 +15,7 @@ func init() {
 	// Update a particular model (to use a different model version).
 	Models.AddCommand(CreateModel)
 
+	CreateModel.Flags().StringP("namespace", "n", "mlm", "The namespace for the model")
 	CreateModel.Flags().String("from-local", "",
 		"The local path of the variant to upload as the base variant for the model. "+
 			"Supports tensorflow serving and openvino format.")
@@ -64,6 +65,11 @@ var CreateModel = &cobra.Command{
 		modelName := args[0]
 		variantName := "base"
 
+		namespace, err := cmd.Flags().GetString("namespace")
+		if err != nil || namespace == "" {
+			fmt.Println("`mlm models create` requires flag --namespace")
+			os.Exit(1)
+		}
 		localBaseVariantPath, err := cmd.Flags().GetString("from-local")
 		if err != nil || localBaseVariantPath == "" {
 			fmt.Println("`mlm models create` requires flag --from-local")
@@ -85,7 +91,7 @@ var CreateModel = &cobra.Command{
 			os.Exit(1)
 		}
 
-		createVariant(modelName, variantName, localBaseVariantPath, imageDestination, nil,
-			grpcPort, httpPort)
+		createVariant(modelName, variantName, namespace, localBaseVariantPath,
+			imageDestination, nil, "", grpcPort, httpPort)
 	},
 }

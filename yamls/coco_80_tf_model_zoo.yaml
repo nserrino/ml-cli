@@ -1,0 +1,73 @@
+model: coco80
+namespace: mlm
+httpPort: 31313
+grpcPort: 31312
+variants:
+  - name: centernet-hg104-512x512-coco17-tpu-8
+    imageDestination: us-west1-docker.pkg.dev/soe-mlexray/mlexray-demo/centernet-hg104-512x512-coco17-tpu-8:0.0.1
+    sourceModelPath: /home/nserrino/zoo/centernet_hg104_512x512_coco17_tpu-8/saved_model
+    nodeSelector: variant=1
+  - name: centernet-mobilenetv2-fpn-od
+    imageDestination: us-west1-docker.pkg.dev/soe-mlexray/mlexray-demo/centernet-mobilenetv2-fpn-od:0.0.1
+    sourceModelPath: /home/nserrino/zoo/centernet_mobilenetv2_fpn_od/saved_model
+    nodeSelector: variant=2
+  - name: centernet-resnet101-v1-fpn-512x512-coco17-tpu-8
+    imageDestination: us-west1-docker.pkg.dev/soe-mlexray/mlexray-demo/centernet-resnet101-v1-fpn-512x512-coco17-tpu-8:0.0.1
+    sourceModelPath: /home/nserrino/zoo/centernet_resnet101_v1_fpn_512x512_coco17_tpu-8/saved_model
+    nodeSelector: variant=3
+  - name: centernet-resnet50-v1-fpn-512x512-coco17-tpu-8
+    imageDestination: us-west1-docker.pkg.dev/soe-mlexray/mlexray-demo/centernet-resnet50-v1-fpn-512x512-coco17-tpu-8:0.0.1
+    sourceModelPath: /home/nserrino/zoo/centernet_resnet50_v1_fpn_512x512_coco17_tpu-8/saved_model
+    nodeSelector: variant=4
+  - name: centernet-resnet50-v2-512x512-coco17-tpu-8
+    imageDestination: us-west1-docker.pkg.dev/soe-mlexray/mlexray-demo/centernet-resnet50-v2-512x512-coco17-tpu-8:0.0.1
+    sourceModelPath: /home/nserrino/zoo/centernet_resnet50_v2_512x512_coco17_tpu-8/saved_model
+    nodeSelector: variant=5
+  - name: efficientdet-d0-coco17-tpu-32
+    imageDestination: us-west1-docker.pkg.dev/soe-mlexray/mlexray-demo/efficientdet-d0-coco17-tpu-32:0.0.1
+    sourceModelPath: /home/nserrino/zoo/efficientdet_d0_coco17_tpu-32/saved_model
+    nodeSelector: variant=6
+  - name: efficientdet-d1-coco17-tpu-32
+    imageDestination: us-west1-docker.pkg.dev/soe-mlexray/mlexray-demo/efficientdet-d1-coco17-tpu-32:0.0.1
+    sourceModelPath: /home/nserrino/zoo/efficientdet_d1_coco17_tpu-32/saved_model
+    nodeSelector: variant=7
+  - name: faster-rcnn-inception-resnet-v2-640x640-coco17-tpu-8
+    imageDestination: us-west1-docker.pkg.dev/soe-mlexray/mlexray-demo/faster-rcnn-inception-resnet-v2-640x640-coco17-tpu-8:0.0.1
+    sourceModelPath: /home/nserrino/zoo/faster_rcnn_inception_resnet_v2_640x640_coco17_tpu-8/saved_model
+    nodeSelector: variant=8
+  - name: faster-rcnn-resnet152-v1-640x640-coco17-tpu-8
+    imageDestination: us-west1-docker.pkg.dev/soe-mlexray/mlexray-demo/faster-rcnn-resnet152-v1-640x640-coco17-tpu-8:0.0.1
+    sourceModelPath: /home/nserrino/zoo/faster_rcnn_resnet152_v1_640x640_coco17_tpu-8/saved_model
+    nodeSelector: variant=9
+  - name: faster-rcnn-resnet50-v1-640x640-coco17-tpu-8
+    imageDestination: us-west1-docker.pkg.dev/soe-mlexray/mlexray-demo/faster-rcnn-resnet50-v1-640x640-coco17-tpu-8:0.0.1
+    sourceModelPath: /home/nserrino/zoo/faster_rcnn_resnet50_v1_640x640_coco17_tpu-8/saved_model
+    nodeSelector: variant=10
+  - name: ssd-mobilenet-v1-fpn-640x640-coco17-tpu-8
+    imageDestination: us-west1-docker.pkg.dev/soe-mlexray/mlexray-demo/ssd-mobilenet-v1-fpn-640x640-coco17-tpu-8:0.0.1
+    sourceModelPath: /home/nserrino/zoo/ssd_mobilenet_v1_fpn_640x640_coco17_tpu-8/saved_model
+    nodeSelector: variant=11
+  - name: ssd-mobilenet-v2-fpnlite-640x640-coco17-tpu-8
+    imageDestination: us-west1-docker.pkg.dev/soe-mlexray/mlexray-demo/ssd-mobilenet-v2-fpnlite-640x640-coco17-tpu-8:0.0.1
+    sourceModelPath: /home/nserrino/zoo/ssd_mobilenet_v2_fpnlite_640x640_coco17_tpu-8/saved_model
+    nodeSelector: variant=12
+  - name: ssd-resnet101-v1-fpn-640x640-coco17-tpu-8
+    imageDestination: us-west1-docker.pkg.dev/soe-mlexray/mlexray-demo/ssd-resnet101-v1-fpn-640x640-coco17-tpu-8:0.0.1
+    sourceModelPath: /home/nserrino/zoo/ssd_resnet101_v1_fpn_640x640_coco17_tpu-8/saved_model
+    nodeSelector: variant=13
+  - name: ssd-resnet152-v1-fpn-640x640-coco17-tpu-8
+    imageDestination: us-west1-docker.pkg.dev/soe-mlexray/mlexray-demo/ssd-resnet152-v1-fpn-640x640-coco17-tpu-8:0.0.1
+    sourceModelPath: /home/nserrino/zoo/ssd_resnet152_v1_fpn_640x640_coco17_tpu-8/saved_model
+    nodeSelector: variant=14
+  - name: ssd-resnet50-v1-fpn-640x640-coco17-tpu-8
+    imageDestination: us-west1-docker.pkg.dev/soe-mlexray/mlexray-demo/ssd-resnet50-v1-fpn-640x640-coco17-tpu-8:0.0.1
+    sourceModelPath: /home/nserrino/zoo/ssd_resnet50_v1_fpn_640x640_coco17_tpu-8/saved_model
+    nodeSelector: variant=15
+  - name: ssd-mobilenet-v2-320x320-coco17-tpu-8
+    imageDestination: us-west1-docker.pkg.dev/soe-mlexray/mlexray-demo/ssd-mobilenet-v2-320x320-coco17-tpu-8:0.0.1
+    sourceModelPath: /home/nserrino/zoo/ssd_mobilenet_v2_320x320_coco17_tpu-8/saved_model
+    nodeSelector: variant=16
+  - name: ssd-mobilenet-v2-fpnlite-320x320-coco17-tpu-8
+    imageDestination: us-west1-docker.pkg.dev/soe-mlexray/mlexray-demo/ssd-mobilenet-v2-fpnlite-320x320-coco17-tpu-8:0.0.1
+    sourceModelPath: /home/nserrino/zoo/ssd_mobilenet_v2_fpnlite_320x320_coco17_tpu-8/saved_model
+    nodeSelector: variant=17

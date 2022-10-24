@@ -1,0 +1,37 @@
+model: mobilenet3
+namespace: mlm
+httpPort: 31313
+grpcPort: 31312
+variants:
+  - name: faster-rcnn-inception-tfs
+    imageDestination: us-west1-docker.pkg.dev/soe-mlexray/mlexray-demo/faster-rcnn-inception-tfs:0.0.1
+    sourceModelPath: coco_91/public/faster_rcnn_inception_resnet_v2_atrous_coco/faster_rcnn_inception_resnet_v2_atrous_coco_2018_01_28/saved_model
+    nodeSelector: variant=1
+  - name: rfcn-renset1010-tfs
+    imageDestination: us-west1-docker.pkg.dev/soe-mlexray/mlexray-demo/rfcn-renset1010-tfs:0.0.1
+    sourceModelPath: coco_91/public/rfcn-resnet101-coco-tf/rfcn_resnet101_coco_2018_01_28/saved_model
+    nodeSelector: variant=2
+  - name: ssd-mobilenet-v1-coco-fpn-tfs
+    imageDestination: us-west1-docker.pkg.dev/soe-mlexray/mlexray-demo/ssd-mobilenet-v1-coco-fpn-tfs:0.0.1
+    sourceModelPath: coco_91/public/ssd_mobilenet_v1_fpn_coco/ssd_mobilenet_v1_fpn_shared_box_predictor_640x640_coco14_sync_2018_07_03/saved_model
+    nodeSelector: variant=3
+  - name: ssd-mobilenet-v1-coco-tfs
+    imageDestination: us-west1-docker.pkg.dev/soe-mlexray/mlexray-demo/ssd-mobilenet-v1-coco-tfs:0.0.1
+    sourceModelPath: coco_91/public/ssd_mobilenet_v1_coco/ssd_mobilenet_v1_coco_2018_01_28/saved_model/
+    nodeSelector: variant=4
+  - name: ssd-mobilenet-v1-coco-fp16
+    imageDestination: us-west1-docker.pkg.dev/soe-mlexray/mlexray-demo/ssd-mobilenet-v1-coco-fp16:0.0.1
+    sourceModelPath: coco_91/public/ssd_mobilenet_v1_coco/FP16
+    nodeSelector: variant=5
+  - name: ssd-mobilenet-v1-coco-fp32
+    imageDestination: us-west1-docker.pkg.dev/soe-mlexray/mlexray-demo/ssd-mobilenet-v1-coco-fp32:0.0.1
+    sourceModelPath: coco_91/public/ssd_mobilenet_v1_coco/FP32
+    nodeSelector: variant=6
+  - name: ssd-mobilenet-v1-coco-fpn-fp16
+    imageDestination: us-west1-docker.pkg.dev/soe-mlexray/mlexray-demo/ssd-mobilenet-v1-coco-fpn-fp16:0.0.1
+    sourceModelPath: coco_91/public/ssd_mobilenet_v1_fpn_coco/FP16
+    nodeSelector: variant=7
+  - name: ssd-mobilenet-v1-coco-fpn-fp32
+    imageDestination: us-west1-docker.pkg.dev/soe-mlexray/mlexray-demo/ssd-mobilenet-v1-coco-fpn-fp32:0.0.1
+    sourceModelPath: coco_91/public/ssd_mobilenet_v1_fpn_coco/FP32
+    nodeSelector: variant=8

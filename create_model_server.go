@@ -175,7 +175,7 @@ apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   name: $MODEL_DAEMONSET_NAME
-  namespace: mlm
+  namespace: $NAMESPACE
   labels:
     mlm.model.name: $MODEL_NAME
     mlm.model.variant: $VARIANT_NAME
@@ -219,7 +219,7 @@ func createTempFile(fileContents string) (string, error) {
 	return tmpFile.Name(), nil
 }
 
-func deployModelServer(modelName, variantName, imageLocation, grpcPort, httpPort string) error {
+func deployModelServer(modelName, variantName, namespace, imageLocation, grpcPort, httpPort string) error {
 	modelDaemonSetName := fmt.Sprintf("%s-%s", modelName, variantName)
 	nodeLabelKey := labelName(modelName)
 	modelServerVariantImage := imageLocation
@@ -232,6 +232,7 @@ func deployModelServer(modelName, variantName, imageLocation, grpcPort, httpPort
 	kubernetesResources = strings.Replace(kubernetesResources, "$MODEL_SERVER_VARIANT_IMAGE", modelServerVariantImage, -1)
 	kubernetesResources = strings.Replace(kubernetesResources, "$HOST_GRPC_PORT", grpcPort, -1)
 	kubernetesResources = strings.Replace(kubernetesResources, "$HOST_HTTP_PORT", httpPort, -1)
+	kubernetesResources = strings.Replace(kubernetesResources, "$NAMESPACE", namespace, -1)
 
 	fileName, err := createTempFile(kubernetesResources)
 	if fileName == "" || err != nil {

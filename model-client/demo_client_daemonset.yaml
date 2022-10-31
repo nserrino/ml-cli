@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  annotations:
+  name: demo-client
+spec:
+  selector:
+    matchLabels:
+      name: demo-client
+  template:
+    metadata:
+      labels:
+        name: demo-client
+    spec:
+      containers:
+      - env:
+        - name: HOST_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.hostIP
+        - name: SERVER_PORT
+          value: "31315"
+        - name: RANDOM_SEED
+          valueFrom:
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: IMAGE_PATHS
+          value: '["https://upload.wikimedia.org/wikipedia/commons/b/b4/Samoyede_Nauka_2003-07_asb_PICT1895_small.JPG",
+            "https://upload.wikimedia.org/wikipedia/commons/4/45/A_small_cup_of_coffee.JPG",
+            "https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/Sunflower_from_Silesia2.jpg/1600px-Sunflower_from_Silesia2.jpg"]'
+        - name: MODEL_IMAGE
+          value: "ee292d"
+        - name: VIDEO
+          value: "false"
+        image: us-west1-docker.pkg.dev/soe-mlexray/pixie-development/koo-client:0.0.16
+        imagePullPolicy: IfNotPresent
+        name: app
+        volumeMounts:
+        - mountPath: /dev/video0
+          name: dev-video0
+        securityContext:
+          privileged: true 
+      volumes:
+      - name: dev-video0
+        hostPath:
+          path: /dev/video0        
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
